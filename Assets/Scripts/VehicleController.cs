@@ -1,10 +1,8 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class VehicleController : MonoBehaviour{
     public Rigidbody2D m_Rigidbody2D;
-    private bool m_FacingRight = true;  // Determine which way the vehicle is currently facing.
+    private bool m_FacingRight = true;          // Determine which way the vehicle is currently facing.
     public Vector2 Movement;
     public float SlowVehicleSpeed = 2f;
     public float FastVehicleSpeed = 5f;
@@ -49,12 +47,12 @@ public class VehicleController : MonoBehaviour{
             }
         }
 
-        //	Flip if input moves player right but they are facing left
+        // Flip if vehicle moving right but facing left
         if (m_Rigidbody2D.velocity.x < 0 && !m_FacingRight)
         {
             Flip();
         }
-        // Flip if input moves player left but they are facing right
+        // Flip if vehicle moving left but facing right
         else if (m_Rigidbody2D.velocity.x > 0 && m_FacingRight)
         {
             Flip();
@@ -62,12 +60,15 @@ public class VehicleController : MonoBehaviour{
     }
 
     void MoveVehicle(Vector2 VehicleDirection, float VehicleSpeed){
+        // Move vehicle across stage
         m_Rigidbody2D.velocity = VehicleDirection * VehicleSpeed;
     }
 
     private void OnCollisionEnter2D(Collision2D collision){
         // Knock player away when hit by vehicle
         Rigidbody2D m_PlayerRigidbody2D = collision.collider.GetComponent<Rigidbody2D>();
+
+        // Force player down
         m_PlayerRigidbody2D.velocity = new Vector2(m_Rigidbody2D.velocity.x * ImpactForce, ImpactForceDown);
     }
 

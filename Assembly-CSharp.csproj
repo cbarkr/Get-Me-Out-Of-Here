@@ -62,7 +62,6 @@
     <Compile Include="Assets\Scripts\VehicleController.cs" />
     <Compile Include="Assets\Scripts\PlayerMovement.cs" />
     <Compile Include="Assets\Scripts\GameManager.cs" />
-    <Compile Include="Assets\Scripts\Parallax.cs" />
     <Compile Include="Assets\Scripts\GameMenu.cs" />
   </ItemGroup>
   <ItemGroup>
