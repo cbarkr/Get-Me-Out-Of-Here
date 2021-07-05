@@ -4,6 +4,8 @@
 
 A rage platformer inspired by Jump King
 
+Made in Unity
+
 Made as part of a game jam with a couple of friends during June
 
 ---
