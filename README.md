@@ -4,9 +4,9 @@
 
 A rage platformer inspired by Jump King
 
-Made in Unity
+Made with <img alt="Unity" src="https://img.shields.io/badge/unity-%23000000.svg?style=for-the-badge&logo=unity&logoColor=white"/> and <img alt="C#" src="https://img.shields.io/badge/c%23-%23239120.svg?style=for-the-badge&logo=c-sharp&logoColor=white"/>
 
-Made as part of a game jam with a couple of friends during June
+Created as part of a game jam with a couple of friends during June
 
 ---
 
