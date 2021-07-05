@@ -1,32 +1,31 @@
 using UnityEngine;
-using UnityEngine.Events;
 
 public class CharacterController2D : MonoBehaviour{
-	[SerializeField] private float m_JumpForce = 550f;							// Amount of force added when the player jumps.
-	[Range(0, 1)] [SerializeField] private float m_CrouchSpeed = .36f;			// Amount of maxSpeed applied to crouching movement. 1 = 100%
+	[SerializeField] private float m_JumpForce = 550f;							// Force added when the player jumps
+	[Range(0, 1)] [SerializeField] private float m_CrouchSpeed = .36f;			// Amount of maxSpeed applied to crouching movement
 	[SerializeField] private bool m_AirControl = false;							// Whether or not a player can steer while jumping;
-	[SerializeField] private LayerMask m_WhatIsGround;							// A mask determining what is ground to the character
-	[SerializeField] private Transform m_GroundCheck;							// A position marking where to check if the player is grounded.
-	[SerializeField] private Transform m_CeilingCheck;							// A position marking where to check for ceilings
-	[SerializeField] private Collider2D m_CrouchDisableCollider;                // A collider that will be disabled when crouching
+	[SerializeField] private LayerMask m_WhatIsGround;							// Mask determining what is ground to the character
+	[SerializeField] private Transform m_GroundCheck;							// Position marking where to check if the player is grounded
+	[SerializeField] private Transform m_CeilingCheck;							// Position marking where to check for ceilings
+	[SerializeField] private Collider2D m_CrouchDisableCollider;                // Collider that is disabled when crouching
 
-	const float k_GroundedRadius = .1f; // Radius of the overlap circle to determine if grounded
-	private bool m_Grounded;           // Whether or not the player is grounded.
-	const float k_CeilingRadius = .1f;  // Radius of the overlap circle to determine if the player can stand up
-	private Rigidbody2D m_Rigidbody2D;
-	public Animator animator;
-	private bool m_FacingRight = true;  // Determine which way the player is currently facing.
-	private Vector3 m_Velocity = Vector3.zero;
+	const float k_GroundedRadius = .1f;											// Radius of the overlap circle to determine if grounded
+	private bool m_Grounded;													// Whether or not the player is grounded
+	const float k_CeilingRadius = .1f;											// Radius of the overlap circle to determine if the player can stand up
+	private bool m_FacingRight = true;											// Determine which way the player is currently facing
 
-	private bool isFloating = false;
 	private float DefaultMoveSpeed;
 	private float DefaultGravityScale;
-	public float LevitatingGravityScale = 0.5f;
-	public float LevitatingTime = 2.5f;	//	Levitate for 2.5 seconds by default
+	private bool isLevitating = false;                                          // Determine if player is currently levitating
+	public float LevitatingGravityScale = 0.5f;									// Gravity scale enabled when levitating
+	public float LevitatingTime = 2.5f;											// Time in seconds that player can levitate
 	private float LevitatingTimeCounter;
-	public float SlippySpeed = 5f;
-	public float ForceDown = -5f;
-	public float MaxYSpeed = 15f;
+	public float SlippySpeed = 5f;												// Speed on angled tiles
+	public float ForceDown = -5f;												// Force applied down on player when hit by vehicle
+	public float MaxYSpeed = 15f;												// Maximum Y speed applied to player for bounce pads
+
+	private Rigidbody2D m_Rigidbody2D;
+	public Animator animator;
 
 	private void Awake(){
 		// Get player rigidbody
@@ -37,7 +36,6 @@ public class CharacterController2D : MonoBehaviour{
 	}
 
 	private void FixedUpdate(){
-		bool wasGrounded = m_Grounded;
 		m_Grounded = false;
 
 		// The player is grounded if a circlecast to the groundcheck position hits anything designated as ground
@@ -53,9 +51,8 @@ public class CharacterController2D : MonoBehaviour{
 		// Get default move speed
 		DefaultMoveSpeed = move;
 
-		// Only control the player if grounded or airControl is turned on
+		// Control the player if on ground or in air if airControl is turned on
 		if (m_Grounded || m_AirControl){
-			// If crouching
 			if (crouch){
 				// Reduce the speed by the crouchSpeed multiplier
 				move *= m_CrouchSpeed;
@@ -75,22 +72,23 @@ public class CharacterController2D : MonoBehaviour{
 				// Disable crouching animation
 				animator.SetBool("isCrouch", false);
 
-				// If the character has a ceiling preventing them from standing up, keep them crouching
+				// If a ceiling prevents character from standing, keep them crouching
 				if (Physics2D.OverlapCircle(m_CeilingCheck.position, k_CeilingRadius, m_WhatIsGround)){
+					crouch = true;
 				}
-				// Enable the collider when not crouching
+				// Enable collider when not crouching
 				else if (m_CrouchDisableCollider != null){
 					m_CrouchDisableCollider.enabled = true;
 				}
 			}
 
 			if (m_Rigidbody2D.velocity.y > MaxYSpeed){
-				// Move the character by finding the target velocity
-				// Check if y velocity greater than maximum
+				// Move player by finding target velocity
+					// Replace Y speed if player exceeds the maximum
 				m_Rigidbody2D.velocity = new Vector2(m_Rigidbody2D.velocity.x, MaxYSpeed);
             }
 
-			// Move the character by finding the target velocity
+			// Move player by finding target velocity
 			m_Rigidbody2D.velocity = new Vector2(move * Time.fixedDeltaTime, m_Rigidbody2D.velocity.y);
 
 			//	Flip if input moves player right but they are facing left
@@ -103,11 +101,14 @@ public class CharacterController2D : MonoBehaviour{
 			}
 		}
 		
-		// Hang time + jump timeout (otherwise player can take advantage of higher velocity the insant they begin jump)
 		if (m_Grounded){
-			isFloating = false;
+			// Player not levitating if they are grounded
+			isLevitating = false;
+			
+			// Get default gravity scale 
 			m_Rigidbody2D.gravityScale = DefaultGravityScale;
 
+			// Set levitating timer to default
 			LevitatingTimeCounter = LevitatingTime;
 
 			// Disable jumping animation
@@ -115,7 +116,8 @@ public class CharacterController2D : MonoBehaviour{
 		}
 
 		//	If jumping (jump 1)
-		if (jump && m_Grounded && !isFloating){
+		if (jump && m_Grounded && !isLevitating){
+			// Add jump force in Y
 			m_Rigidbody2D.AddForce(new Vector2(0f, m_JumpForce));
 			m_Grounded = false;
 
@@ -124,18 +126,22 @@ public class CharacterController2D : MonoBehaviour{
 		}
 
 		// Toggle player levitating physics (jump 2)
-		else if (jump && !m_Grounded && !isFloating){
-			m_Rigidbody2D.gravityScale = LevitatingGravityScale;	//	Disable gravity on player
-			m_Rigidbody2D.velocity = new Vector2(m_Rigidbody2D.velocity.x, 0f);	//	Start levitating at position that they press space again
-			isFloating = true;
+		else if (jump && !m_Grounded && !isLevitating){
+			// Lower gravity while player is levitating
+			m_Rigidbody2D.gravityScale = LevitatingGravityScale;
+			
+			// Levitate at the position that they press space
+			m_Rigidbody2D.velocity = new Vector2(m_Rigidbody2D.velocity.x, 0f);
+			isLevitating = true;
 
 			// Toggle falling animation
 			animator.SetBool("isFall", true);
 		}
 		
 		// Disable player levitating physics (jump 3)
-		else if (jump || LevitatingTimeCounter <= 0 && !m_Grounded && isFloating){
-			m_Rigidbody2D.gravityScale = DefaultGravityScale;   //	Re-enable gravity on player
+		else if (jump || LevitatingTimeCounter <= 0 && !m_Grounded && isLevitating){
+			// Enable normal gravity when player stops levitating
+			m_Rigidbody2D.gravityScale = DefaultGravityScale;
 
 			// Disable falling animation
 			animator.SetBool("isFall", false);
